@@ -1,0 +1,129 @@
+#!/bin/bash
+
+#
+# Execute clases with main method inside maven project.
+#
+
+SET_PARAMS="yes"
+
+if [ -n "$mvnExec_DEBUG" ]
+then
+   set -x
+fi
+
+function help {
+   cat >&2 <<EOF
+
+Execute clases with main method inside maven project.
+
+Options
+   -x, --no-parameters    Don't ak for parameters
+
+Examples:
+
+ $ mvnExec
+ $ mvnExec -x
+
+EOF
+   exit 1
+}
+
+function errorJavaExecutable() {
+   echo cannot locate java. Set JDK_HOME or JAVA_HOME or add java to path.
+   exit -1
+}
+
+function testJavaExec() {
+   test -x "$1/bin/java"
+}
+
+function setJavaExecutable() {
+   if [ -z "$1" ] || ! testJavaExec "$1"
+   then
+      errorJavaExecutable
+   else
+      JAVA="$1/bin/java"
+   fi
+}
+
+function findMainClasses() {
+   if [ -d $1 ]
+   then
+      grep " main *(" -R $1 --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
+          cut -d ':' -f 1 | sed 's+'$1'++;s/.java$//' | tr / . | sort
+   fi
+}
+
+TEMP=$(getopt -o "xh" -l no-parameters,help -n $(basename $0) -- "$@" || help)
+
+# process script arguments
+eval set -- "$TEMP"
+
+while true
+do
+   case "$1" in
+      -x|--no-parameters)
+         SET_PARAMS=
+         ;;
+      -h|--help) 
+         help ;;
+      --) 
+         shift
+         break ;;
+      *) 
+         cat <&2 <<EOF
+
+Error, unknow arguments $@
+EOF
+         help
+         exit 1 ;;
+   esac
+   shift
+done
+
+if [ -n "$JDK_HOME" ]
+then
+   setJavaExecutable "$JDK_HOME"
+elif [ -n "$JAVA_HOME" ]
+then
+   setJavaExecutable "$JAVA_HOME"
+elif command -v java >&-
+then
+   JAVA=$(command -v java >&-)
+else
+   errorJavaExecutable
+fi
+
+MAINCLASSES=$(findMainClasses src/test/java/)$(findMainClasses src/main/java/)
+if [ -z "$MAINCLASSES" ] 
+then
+   echo no classes with main method in $PWD
+   echo   
+   exit -1
+fi
+
+select CLASS in ${MAINCLASSES}
+do
+	if [ -z "$CLASS" ]
+	then
+		if [ "$REPLY" == "salir" ] 
+		then
+			break
+		else
+			echo unknow option
+			continue
+		fi
+	fi
+    if [ -n "$SET_PARAMS" ]
+    then
+	   echo set parameters:
+	   read -e ARGS
+	   if [ -n "$ARGS" ]
+	   then 
+	        ARGS=" $ARGS"
+	   fi
+    fi
+    mvn clean install dependencies:copy-dependencies
+	mvn exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." -Dexec.args="-cp target/classes:target/test-classes:target/dependency/* ${CLASS}${ARGS}"
+	break
+done

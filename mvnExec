@@ -123,7 +123,7 @@ do
 	        ARGS=" $ARGS"
 	   fi
     fi
-    mvn clean install dependencies:copy-dependencies
+    mvn clean install dependency:copy-dependencies
 	mvn exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." -Dexec.args="-cp target/classes:target/test-classes:target/dependency/* ${CLASS}${ARGS}"
 	break
 done

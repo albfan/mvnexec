@@ -24,8 +24,8 @@ $ mvnExec
 ```
 
 1. First you will see a list of classes having main methods
-2. Next you will be prompted for parameters (press `<Enter>` if none is required or launch with `-x`)
-3. Program is compiled and launched
+2. Next you will be prompted for parameters (press `<Enter>` if none is required or launch with `-P`)
+3. Program is compiled and launched (launch with `-B` to avoid compiling again)
 
 ##Features
 

@@ -5,6 +5,7 @@
 #
 
 SET_PARAMS="yes"
+BUILD="yes"
 
 if [ -n "$mvnExec_DEBUG" ]
 then
@@ -14,24 +15,26 @@ fi
 function help {
    cat >&2 <<EOF
 
+$0 [options] [args]
+
 Execute clases with main method inside maven project.
 
 Options
-   -x, --no-parameters    Don't ak for parameters
-   -q,--quiet             Be quiet. Don't show [INFO] messages from maven
-
+   -P, --no-parameters   Don't ask for parameters
+   -q, --quiet           Be quiet. Don't show [INFO] messages from maven
+   -B, --no-build        Avoid building. 
 Examples:
 
  $ mvnExec
- $ mvnExec -x
+ $ mvnExec -P
+ $ mvnExec -PqB
 
 EOF
-   exit 1
 }
 
 function errorJavaExecutable() {
    echo cannot locate java. Set JDK_HOME or JAVA_HOME or add java to path.
-   exit -1
+   exit 1
 }
 
 function testJavaExec() {
@@ -68,7 +71,13 @@ function dependencyClasspath() {
    fi
 }
 
-TEMP=$(getopt -o "xqh" -l no-parameters,quiet,help -n $(basename $0) -- "$@" || help)
+TEMP=$(getopt -o "PqBh" -l no-parameters,quiet,no-build,help -n $(basename $0) -- "$@")
+EXIT=$?
+if [ $EXIT != 0 ]
+then
+    help
+    exit $EXIT
+fi
 
 # process script arguments
 eval set -- "$TEMP"
@@ -76,24 +85,30 @@ eval set -- "$TEMP"
 while true
 do
    case "$1" in
-      -x|--no-parameters)
+      -P|--no-parameters)
          SET_PARAMS=
+         ;;
+      -B|--no-build) 
+         BUILD="no" 
          ;;
       -q|--quiet) 
          QUIET="-q" 
          ;;
       -h|--help) 
-         help ;;
+         help 
+         exit
+         ;;
       --) 
          shift
          break ;;
       *) 
          cat <&2 <<EOF
 
-Error, unknow arguments $@
+Error, unknow arguments $1
 EOF
          help
-         exit 1 ;;
+         exit 1 
+         ;;
    esac
    shift
 done
@@ -116,7 +131,7 @@ if [ -z "$MAINCLASSES" ]
 then
    echo no classes with main method in $PWD
    echo   
-   exit -1
+   exit 1
 fi
 
 select CLASS in ${MAINCLASSES}
@@ -140,10 +155,13 @@ do
 	        ARGS=" $ARGS"
 	   fi
     fi
-    echo compiling and getting dependencies
-    mvn $QUIET clean install dependency:copy-dependencies
+    if [ "$BUILD" == "yes" ]
+    then
+       echo compiling and getting dependencies
+       mvn $QUIET clean install dependency:copy-dependencies
+    fi
     echo executing
     mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
-        -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS}"
+        -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*" 
 	break
 done

@@ -6,6 +6,8 @@
 
 SET_PARAMS="yes"
 BUILD="yes"
+SEARCH_MAIN="yes"
+SEARCH_TEST="yes"
 
 if [ -n "$mvnExec_DEBUG" ]
 then
@@ -23,6 +25,8 @@ Options
    -P, --no-parameters   Don't ask for parameters
    -q, --quiet           Be quiet. Don't show [INFO] messages from maven
    -B, --no-build        Avoid building. 
+   -M, --no-main         Don't search on src/main/java
+   -T, --no-test         Don't search on src/test/java
 Examples:
 
  $ mvnExec
@@ -71,7 +75,7 @@ function dependencyClasspath() {
    fi
 }
 
-TEMP=$(getopt -o "PqBh" -l no-parameters,quiet,no-build,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTh" -l no-parameters,quiet,no-build,no-main,no-test,help -n $(basename $0) -- "$@")
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -93,6 +97,12 @@ do
          ;;
       -q|--quiet) 
          QUIET="-q" 
+         ;;
+      -M|--no-main)
+         SEARCH_MAIN="no"
+         ;;
+      -T|--no-test)
+         SEARCH_TEST="no"
          ;;
       -h|--help) 
          help 
@@ -126,15 +136,27 @@ else
    errorJavaExecutable
 fi
 
-MAINCLASSES=$(findMainClasses src/main/java)$(findMainClasses src/test/java)
-if [ -z "$MAINCLASSES" ] 
+
+if [ $SEARCH_MAIN == "yes" ]
+then
+   MAINCLASSES=$(findMainClasses src/main/java)
+fi
+
+if [ $SEARCH_TEST == "yes" ]
+then
+   TESTCLASSES=$(findMainClasses src/test/java)
+fi
+
+FOUNDCLASSES=$MAINCLASSES$TESTCLASSES
+
+if [ -z "$FOUNDCLASSES" ] 
 then
    echo no classes with main method in $PWD
    echo   
    exit 1
 fi
 
-select CLASS in ${MAINCLASSES}
+select CLASS in ${FOUNDCLASSES}
 do
 	if [ -z "$CLASS" ]
 	then

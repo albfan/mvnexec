@@ -18,6 +18,7 @@ Execute clases with main method inside maven project.
 
 Options
    -x, --no-parameters    Don't ak for parameters
+   -q,--quiet             Be quiet. Don't show [INFO] messages from maven
 
 Examples:
 
@@ -49,12 +50,25 @@ function setJavaExecutable() {
 function findMainClasses() {
    if [ -d $1 ]
    then
-      grep " main *(" -R $1 --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
-          cut -d ':' -f 1 | sed 's+'$1'++;s/.java$//' | tr / . | sort
+      grep " main *(" -R $1/* --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
+          cut -d ':' -f 1 | sed 's+'$1'/++;s/.java$//' | tr / . | sort
    fi
 }
 
-TEMP=$(getopt -o "xh" -l no-parameters,help -n $(basename $0) -- "$@" || help)
+function dependencyClasspath() {
+   IFS=. read major minor extra < <($JAVA -version |& awk -F '"' '/version/ {print $2}') 
+   if [ "$major" == 1 ] && [[ "$minor" > 5 ]]
+   then
+      echo 'target/dependency/*'
+   else
+      for i in target/dependency/*.jar
+      do 
+        echo -n $i:
+      done | sed 's/:$//'
+   fi
+}
+
+TEMP=$(getopt -o "xqh" -l no-parameters,quiet,help -n $(basename $0) -- "$@" || help)
 
 # process script arguments
 eval set -- "$TEMP"
@@ -64,6 +78,9 @@ do
    case "$1" in
       -x|--no-parameters)
          SET_PARAMS=
+         ;;
+      -q|--quiet) 
+         QUIET="-q" 
          ;;
       -h|--help) 
          help ;;
@@ -94,7 +111,7 @@ else
    errorJavaExecutable
 fi
 
-MAINCLASSES=$(findMainClasses src/test/java/)$(findMainClasses src/main/java/)
+MAINCLASSES=$(findMainClasses src/main/java)$(findMainClasses src/test/java)
 if [ -z "$MAINCLASSES" ] 
 then
    echo no classes with main method in $PWD
@@ -123,7 +140,10 @@ do
 	        ARGS=" $ARGS"
 	   fi
     fi
-    mvn clean install dependency:copy-dependencies
-	mvn exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." -Dexec.args="-cp target/classes:target/test-classes:target/dependency/* ${CLASS}${ARGS}"
+    echo compiling and getting dependencies
+    mvn $QUIET clean install dependency:copy-dependencies
+    echo executing
+    mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
+        -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS}"
 	break
 done

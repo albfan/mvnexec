@@ -8,6 +8,7 @@ SET_PARAMS="yes"
 BUILD="yes"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
+FILTER_NAME_PROG="cat -"
 
 if [ -n "$mvnExec_DEBUG" ]
 then
@@ -27,11 +28,13 @@ Options
    -B, --no-build        Avoid building. 
    -M, --no-main         Don't search on src/main/java
    -T, --no-test         Don't search on src/test/java
-Examples:
+   -f, --filter-name     Name filter for classes
 
- $ mvnExec
- $ mvnExec -P
- $ mvnExec -PqB
+Examples :
+
+ $ $0
+ $ $0 -P
+ $ $0 -PqB
 
 EOF
 }
@@ -58,7 +61,7 @@ function findMainClasses() {
    if [ -d $1 ]
    then
       grep " main *(" -R $1/* --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
-          cut -d ':' -f 1 | sed 's+'$1'/++;s/.java$//' | tr / . | sort
+          cut -d ':' -f 1 | $FILTER_NAME_PROG | sed 's+'$1'/++;s/.java$//' | tr / . | sort
    fi
 }
 
@@ -75,7 +78,7 @@ function dependencyClasspath() {
    fi
 }
 
-TEMP=$(getopt -o "PqBMTh" -l no-parameters,quiet,no-build,no-main,no-test,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:h" -l no-parameters,quiet,no-build,no-main,filter-name:,no-test,help -n $(basename $0) -- "$@")
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -103,6 +106,11 @@ do
          ;;
       -T|--no-test)
          SEARCH_TEST="no"
+         ;;
+      -f|--filter-name)
+         ARG=$2
+         shift
+         FILTER_NAME_PROG="grep -i $ARG"
          ;;
       -h|--help) 
          help 

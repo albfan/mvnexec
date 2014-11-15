@@ -1,10 +1,10 @@
 #mvnExec
 
-A script to find java files inside your maven project containing a main function
+A script to find java files inside your maven project containing a main function without touching `pom.xml`
 
 ##Installation
 
-link it to your path
+Download and symlink to your path
 
 ```bash
 $ git clone git@github.com:albfan/mvnExec.git
@@ -27,4 +27,11 @@ $ mvnExec
 2. Next you will be prompted for parameters (press `<Enter>` if none is required or launch with `-x`)
 3. Program is compiled and launched
 
+##Features
+
+Try using `mvnExec --help`
+
+- avoid to change `pom.xml` to test classes with main methods
+- **-q** or **--quiet** behave quiet. Don't show noisy [INFO] messages from maven
+- Support project classpath resolving for any java version
 

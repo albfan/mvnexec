@@ -9,6 +9,7 @@ BUILD="yes"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
+AUTO="no"
 
 eval SCRIPT_DEBUG="\$$(basename $0)_DEBUG"
 if [ -n "$SCRIPT_DEBUG" ]
@@ -24,12 +25,13 @@ $0 [options] [args]
 Execute clases with main method inside maven project.
 
 Options
-   -P, --no-parameters   Don't ask for parameters
-   -q, --quiet           Be quiet. Don't show [INFO] messages from maven
+   -P, --no-parameters   Don't ask for parameters.
+   -q, --quiet           Be quiet. Don't show [INFO] messages.
    -B, --no-build        Avoid building. 
-   -M, --no-main         Don't search on src/main/java
-   -T, --no-test         Don't search on src/test/java
-   -f, --filter-name     Name filter for classes
+   -M, --no-main         Don't search on src/main/java.
+   -T, --no-test         Don't search on src/test/java.
+   -f, --filter-name     Name filter for classes.
+   -a, --auto            If there is only one match launch it.
 
 Examples :
 
@@ -67,7 +69,7 @@ function findMainClasses() {
 }
 
 function dependencyClasspath() {
-   IFS=. read major minor extra < <($JAVA -version |& awk -F '"' '/version/ {print $2}') 
+   IFS=. read major minor extra < <($JAVA -version |& awk -F '"' '/version/ {print $2}')
    if [ "$major" == 1 ] && [[ "$minor" > 5 ]]
    then
       echo 'target/dependency/*'
@@ -79,7 +81,18 @@ function dependencyClasspath() {
    fi
 }
 
-TEMP=$(getopt -o "PqBMTf:h" -l no-parameters,quiet,no-build,no-main,filter-name:,no-test,help -n $(basename $0) -- "$@")
+function launch() {
+   if [ "$BUILD" == "yes" ]
+   then
+      echo compiling and getting dependencies
+      mvn $QUIET clean install dependency:copy-dependencies
+   fi
+   echo executing $CLASS
+   mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
+      -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*"
+}
+
+TEMP=$(getopt -o "PqBMTf:ah" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,help -n $(basename $0) -- "$@")
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -111,22 +124,26 @@ do
       -f|--filter-name)
          ARG=$2
          shift
-         FILTER_NAME_PROG="grep -i $ARG"
+         FILTER=$ARG
+         FILTER_NAME_PROG="grep -i $FILTER"
          ;;
-      -h|--help) 
-         help 
+      -a|--auto)
+         AUTO="yes"
+         ;;
+      -h|--help)
+         help
          exit
          ;;
-      --) 
+      --)
          shift
          break ;;
-      *) 
+      *)
          cat <&2 <<EOF
 
 Error, unknow arguments $1
 EOF
          help
-         exit 1 
+         exit 1
          ;;
    esac
    shift
@@ -148,51 +165,64 @@ fi
 
 if [ $SEARCH_MAIN == "yes" ]
 then
-   MAINCLASSES=$(findMainClasses src/main/java)
+   FOUNDCLASSES=$(findMainClasses src/main/java)
 fi
 
 if [ $SEARCH_TEST == "yes" ]
 then
    TESTCLASSES=$(findMainClasses src/test/java)
+   if [ -n "$TESTCLASSES" ]
+   then
+      if [ -n "$FOUNDCLASSES" ]
+      then
+         FOUNDCLASSES="$FOUNDCLASSES
+$TESTCLASSES"
+      else
+         FOUNDCLASSES=$TESTCLASSES
+      fi
+   fi
 fi
 
-FOUNDCLASSES=$MAINCLASSES$TESTCLASSES
-
-if [ -z "$FOUNDCLASSES" ] 
+if [ -z "$FOUNDCLASSES" ]
 then
+   echo
    echo no classes with main method in $PWD
-   echo   
+   if [ -n "$FILTER" ]
+   then
+      echo using filter: $FILTER
+   fi
+   echo
    exit 1
+fi
+
+if [ $AUTO == "yes" ] && ! [[ "$FOUNDCLASSES" == $'\n' ]]
+then
+   CLASS=$FOUNDCLASSES
+   launch $*
 fi
 
 select CLASS in ${FOUNDCLASSES}
 do
-	if [ -z "$CLASS" ]
-	then
-		if [ "$REPLY" == "salir" ] 
-		then
-			break
-		else
-			echo unknow option
-			continue
-		fi
-	fi
+   if [ -z "$CLASS" ]
+   then
+      if [ "$REPLY" == "salir" ]
+      then
+         break
+      else
+         echo unknow option
+         continue
+      fi
+   fi
    if [ -n "$SET_PARAMS" ]
    then
-	   echo set parameters:
-	   read -e ARGS
-	   if [ -n "$ARGS" ]
-	   then 
-	      ARGS=" $ARGS"
-	   fi
+      echo set parameters:
+      read -e ARGS
+      if [ -n "$ARGS" ]
+      then 
+         ARGS=" $ARGS"
+      fi
    fi
-   if [ "$BUILD" == "yes" ]
-   then
-      echo compiling and getting dependencies
-      mvn $QUIET clean install dependency:copy-dependencies
-   fi
-   echo executing
-   mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
-      -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*" 
-	break
+   launch $*
+   break
 done
+

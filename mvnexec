@@ -10,7 +10,8 @@ SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
 
-if [ -n "$mvnExec_DEBUG" ]
+eval SCRIPT_DEBUG="\$$(basename $0)_DEBUG"
+if [ -n "$SCRIPT_DEBUG" ]
 then
    set -x
 fi
@@ -61,7 +62,7 @@ function findMainClasses() {
    if [ -d $1 ]
    then
       grep " main *(" -R $1/* --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
-          cut -d ':' -f 1 | $FILTER_NAME_PROG | sed 's+'$1'/++;s/.java$//' | tr / . | sort
+         cut -d ':' -f 1 | $FILTER_NAME_PROG | sed 's+'$1'/++;s/.java$//' | tr / . | sort
    fi
 }
 
@@ -73,7 +74,7 @@ function dependencyClasspath() {
    else
       for i in target/dependency/*.jar
       do 
-        echo -n $i:
+         echo -n $i:
       done | sed 's/:$//'
    fi
 }
@@ -82,8 +83,8 @@ TEMP=$(getopt -o "PqBMTf:h" -l no-parameters,quiet,no-build,no-main,filter-name:
 EXIT=$?
 if [ $EXIT != 0 ]
 then
-    help
-    exit $EXIT
+   help
+   exit $EXIT
 fi
 
 # process script arguments
@@ -176,22 +177,22 @@ do
 			continue
 		fi
 	fi
-    if [ -n "$SET_PARAMS" ]
-    then
+   if [ -n "$SET_PARAMS" ]
+   then
 	   echo set parameters:
 	   read -e ARGS
 	   if [ -n "$ARGS" ]
 	   then 
-	        ARGS=" $ARGS"
+	      ARGS=" $ARGS"
 	   fi
-    fi
-    if [ "$BUILD" == "yes" ]
-    then
-       echo compiling and getting dependencies
-       mvn $QUIET clean install dependency:copy-dependencies
-    fi
-    echo executing
-    mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
-        -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*" 
+   fi
+   if [ "$BUILD" == "yes" ]
+   then
+      echo compiling and getting dependencies
+      mvn $QUIET clean install dependency:copy-dependencies
+   fi
+   echo executing
+   mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
+      -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*" 
 	break
 done

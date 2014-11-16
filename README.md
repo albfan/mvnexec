@@ -1,4 +1,4 @@
-#mvnExec
+#mvnexec
 
 A script to find java files inside your maven project containing a main function without touching `pom.xml`
 
@@ -7,20 +7,20 @@ A script to find java files inside your maven project containing a main function
 Download and symlink to your path
 
 ```bash
-$ git clone git@github.com:albfan/mvnExec.git
-$ cd mvnExec
-$ ln -s $PWD/mvnExec ~/bin/
+$ git clone git@github.com:albfan/mvnexec.git
+$ cd mvnexec
+$ ln -s $PWD/mvnexec ~/bin/
 ```
 
 ##Usage
 
-mvnExec honors **JDK_HOME**, **JAVA_HOME** system vars and java executable existing in **PATH** (in that order).
+mvnexec honors **JDK_HOME**, **JAVA_HOME** system vars and java executable existing in **PATH** (in that order).
 
 launch it from a maven project
 
 ```bash
 $ cd <maven-project>
-$ mvnExec
+$ mvnexec
 ```
 
 1. First you will see a list of classes having main methods
@@ -29,7 +29,7 @@ $ mvnExec
 
 ##Features
 
-Try using `mvnExec --help`
+Try using `mvnexec --help`
 
 - avoid to change `pom.xml` to test classes with main methods
 - **-q** or **--quiet** behave quiet. Don't show noisy [INFO] messages from maven

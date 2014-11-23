@@ -6,6 +6,7 @@
 
 SET_PARAMS="yes"
 BUILD="yes"
+CLEAN="yes"
 COPY_DEP="yes"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
@@ -27,9 +28,10 @@ Execute clases with main method inside maven project.
 
 Options
    -P, --no-parameters   Don't ask for parameters.
+   -C, --no-clean        Don't clean compilation
    -q, --quiet           Be quiet. Don't show [INFO] messages.
    -B, --no-build        Avoid building. 
-   -C, --no-copy-deps    Avoid copy dependencies
+   -D, --no-copy-deps    Avoid copy dependencies
    -M, --no-main         Don't search on src/main/java.
    -T, --no-test         Don't search on src/test/java.
    -f, --filter-name     Name filter for classes.
@@ -84,10 +86,15 @@ function dependencyClasspath() {
 }
 
 function launch() {
+   if [ "$CLEAN" == "yes" ]
+   then
+      echo cleaning...
+      mvn $QUIET clean
+   fi
    if [ "$BUILD" == "yes" ]
    then
       echo compiling...
-      mvn $QUIET clean install
+      mvn $QUIET install
    fi
    if [ "$COPY_DEP" == "yes" ]
    then
@@ -99,7 +106,7 @@ function launch() {
       -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*"
 }
 
-TEMP=$(getopt -o "PqBMTf:Cah" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DaCh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,help -n $(basename $0) -- "$@")
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -119,7 +126,10 @@ do
       -B|--no-build) 
          BUILD="no" 
          ;;
-      -C|--no-copy-deps) 
+      -C|--no-clean) 
+         CLEAN="no" 
+         ;;
+      -D|--no-copy-deps) 
          COPY_DEP="no" 
          ;;
       -q|--quiet) 

@@ -14,9 +14,13 @@ FILTER_NAME_PROG="cat -"
 AUTO="no"
 
 eval SCRIPT_DEBUG="\$$(basename $0)_DEBUG"
-if [ -n "$SCRIPT_DEBUG" ]
+if [ "$SCRIPT_DEBUG" -ge 0 ]
 then
    set -x
+fi
+if [ "$SCRIPT_DEBUG" -ge 9 ]
+then
+   set -v
 fi
 
 function help {

@@ -215,7 +215,7 @@ then
    exit 1
 fi
 
-if [ $AUTO == "yes" ] && ! [[ "$FOUNDCLASSES" == $'\n' ]]
+if [ $AUTO == "yes" ] && ! [[ "$FOUNDCLASSES" == *$'\n'* ]]
 then
    CLASS=$FOUNDCLASSES
    launch $*

@@ -6,6 +6,7 @@
 
 SET_PARAMS="yes"
 BUILD="yes"
+COPY_DEP="yes"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
@@ -28,6 +29,7 @@ Options
    -P, --no-parameters   Don't ask for parameters.
    -q, --quiet           Be quiet. Don't show [INFO] messages.
    -B, --no-build        Avoid building. 
+   -C, --no-copy-deps    Avoid copy dependencies
    -M, --no-main         Don't search on src/main/java.
    -T, --no-test         Don't search on src/test/java.
    -f, --filter-name     Name filter for classes.
@@ -84,15 +86,20 @@ function dependencyClasspath() {
 function launch() {
    if [ "$BUILD" == "yes" ]
    then
-      echo compiling and getting dependencies
-      mvn $QUIET clean install dependency:copy-dependencies
+      echo compiling...
+      mvn $QUIET clean install
+   fi
+   if [ "$COPY_DEP" == "yes" ]
+   then
+      echo getting dependencies...
+      mvn $QUIET dependency:copy-dependencies
    fi
    echo executing $CLASS
    mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
       -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*"
 }
 
-TEMP=$(getopt -o "PqBMTf:ah" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:Cah" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,help -n $(basename $0) -- "$@")
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -111,6 +118,9 @@ do
          ;;
       -B|--no-build) 
          BUILD="no" 
+         ;;
+      -C|--no-copy-deps) 
+         COPY_DEP="no" 
          ;;
       -q|--quiet) 
          QUIET="-q" 
@@ -199,6 +209,7 @@ if [ $AUTO == "yes" ] && ! [[ "$FOUNDCLASSES" == $'\n' ]]
 then
    CLASS=$FOUNDCLASSES
    launch $*
+   exit
 fi
 
 select CLASS in ${FOUNDCLASSES}

@@ -4,6 +4,21 @@
 # Execute clases with main method inside maven project.
 #
 
+# debug {{{
+eval SCRIPT_DEBUG="\$$(basename $0 | tr - _)_DEBUG"
+SCRIPT_DEBUG=${SCRIPT_DEBUG:--1}
+
+if [ "$SCRIPT_DEBUG" -ge 1 ]
+then
+   set -x
+fi
+if [ "$SCRIPT_DEBUG" -ge 10 ]
+then
+   set -v
+fi
+#}}}
+
+# init {{{
 SET_PARAMS="yes"
 BUILD="yes"
 CLEAN="yes"
@@ -12,25 +27,18 @@ SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
 AUTO="no"
+# }}}
 
-eval SCRIPT_DEBUG="\$$(basename $0)_DEBUG"
-if [ "$SCRIPT_DEBUG" -ge 0 ]
-then
-   set -x
-fi
-if [ "$SCRIPT_DEBUG" -ge 9 ]
-then
-   set -v
-fi
-
+# functions {{{
 function help {
+   local scriptname="$(basename $0)"
    cat >&2 <<EOF
 
-$0 [options] [args]
+$scriptname [options] [args]
 
 Execute clases with main method inside maven project.
 
-Options
+Options:
    -P, --no-parameters   Don't ask for parameters.
    -C, --no-clean        Don't clean compilation
    -q, --quiet           Be quiet. Don't show [INFO] messages.
@@ -41,11 +49,14 @@ Options
    -f, --filter-name     Name filter for classes.
    -a, --auto            If there is only one match launch it.
 
-Examples :
+Examples:
 
- $ $0
- $ $0 -P
- $ $0 -PqB
+ # lauch doing all common task, but quietly
+ $ $scriptname -q
+ # launch without prompt for parameters
+ $ $scriptname -P
+ # launch without any compilation task
+ $ $scriptname -CBDq
 
 EOF
 }
@@ -109,8 +120,11 @@ function launch() {
    mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
       -Dexec.args="-cp target/classes:target/test-classes:$(dependencyClasspath) ${CLASS}${ARGS} $*"
 }
+# }}}
 
+# parse args {{{
 TEMP=$(getopt -o "PqBMTf:DaCh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,help -n $(basename $0) -- "$@")
+
 EXIT=$?
 if [ $EXIT != 0 ]
 then
@@ -172,7 +186,9 @@ EOF
    esac
    shift
 done
+# }}}
 
+# exec {{{
 if [ -n "$JDK_HOME" ]
 then
    setJavaExecutable "$JDK_HOME"
@@ -250,4 +266,6 @@ do
    launch $*
    break
 done
+# }}}
 
+# vim: fdm=marker

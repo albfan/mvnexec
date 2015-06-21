@@ -262,13 +262,13 @@ do
    if [ -n "$SET_PARAMS" ]
    then
       echo set parameters:
-      read -e ARGS
+      read -i "$*" -e ARGS
       if [ -n "$ARGS" ]
       then 
          ARGS=" $ARGS"
       fi
    fi
-   launch $*
+   launch
    break
 done
 # }}}

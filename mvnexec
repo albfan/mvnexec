@@ -84,7 +84,7 @@ function setJavaExecutable() {
 function findMainClasses() {
    if [ -d $1 ]
    then
-      grep " main *(" -R $1/* --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
+      grep " main *(" -R "$1" --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.cvs --include=*.java | \
          cut -d ':' -f 1 | $FILTER_NAME_PROG | sed 's+'$1'/++;s/.java$//' | tr / . | sort
    fi
 }

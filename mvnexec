@@ -27,6 +27,7 @@ SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
 AUTO="no"
+LIST="no"
 SEPARATOR=":"
 # }}}
 
@@ -49,6 +50,7 @@ Options:
    -T, --no-test         Don't search on src/test/java.
    -f, --filter-name     Name filter for classes.
    -a, --auto            If there is only one match launch it.
+   -l, --list            Just output found classes with main method.
        --win-separator   Use ; as classpath separator
 
 Examples:
@@ -125,7 +127,7 @@ function launch() {
 # }}}
 
 # parse args {{{
-TEMP=$(getopt -o "PqBMTf:DaCh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DaClh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,help -n $(basename $0) -- "$@")
 
 EXIT=$?
 if [ $EXIT != 0 ]
@@ -169,6 +171,9 @@ do
          ;;
       -a|--auto)
          AUTO="yes"
+         ;;
+      -l|--list)
+         LIST="yes"
          ;;
       --win-separator)
          SEPARATOR=";"
@@ -240,6 +245,12 @@ then
    exit 1
 fi
 
+if [ $LIST == "yes" ]
+then
+   echo $FOUNDCLASSES
+   exit 0
+fi
+
 if [ $AUTO == "yes" ] && ! [[ "$FOUNDCLASSES" == *$'\n'* ]]
 then
    CLASS=$FOUNDCLASSES
@@ -272,5 +283,4 @@ do
    break
 done
 # }}}
-
 # vim: fdm=marker

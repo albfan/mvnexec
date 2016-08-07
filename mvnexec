@@ -92,7 +92,7 @@ function findMainClasses() {
 }
 
 function dependencyClasspath() {
-   IFS=. read major minor extra < <($JAVA -version |& awk -F '"' '/version/ {print $2}')
+   IFS=. read major minor extra < <($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
    if [ "$major" == 1 ] && [[ "$minor" > 5 ]]
    then
       echo 'target/dependency/*'

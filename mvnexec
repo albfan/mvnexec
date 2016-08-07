@@ -19,6 +19,7 @@ fi
 #}}}
 
 # init {{{
+VERSION=1.1
 SET_PARAMS="yes"
 BUILD="yes"
 CLEAN="yes"
@@ -37,6 +38,8 @@ function help {
    cat >&2 <<EOF
 
 $scriptname [options] [args]
+
+version: $VERSION
 
 Execute clases with main method inside maven project.
 

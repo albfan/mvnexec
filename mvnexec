@@ -183,10 +183,10 @@ do
       --win-separator)
          SEPARATOR=";"
          ;;
-	  --config)
-		 CONFIG="$CONFIG $2"
-		 shift
-		 ;;
+      --config)
+         CONFIG="$CONFIG $2"
+         shift
+         ;;
       -h|--help)
          help
          exit

@@ -30,6 +30,7 @@ FILTER_NAME_PROG="cat -"
 AUTO="no"
 LIST="no"
 SEPARATOR=":"
+CONFIG=""
 # }}}
 
 # functions {{{
@@ -55,6 +56,7 @@ Options:
    -a, --auto            If there is only one match launch it.
    -l, --list            Just output found classes with main method.
        --win-separator   Use ; as classpath separator
+       --config          Additional maven attributes
 
 Examples:
 
@@ -116,7 +118,7 @@ function launch() {
    if [ "$BUILD" == "yes" ]
    then
       echo compiling...
-      mvn $QUIET install
+      mvn $CONFIG $QUIET install
    fi
    if [ "$COPY_DEP" == "yes" ]
    then
@@ -130,7 +132,7 @@ function launch() {
 # }}}
 
 # parse args {{{
-TEMP=$(getopt -o "PqBMTf:DaClh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DaClh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
 
 EXIT=$?
 if [ $EXIT != 0 ]
@@ -180,7 +182,11 @@ do
          ;;
       --win-separator)
          SEPARATOR=";"
-	 ;;
+         ;;
+	  --config)
+		 CONFIG="$CONFIG $2"
+		 shift
+		 ;;
       -h|--help)
          help
          exit

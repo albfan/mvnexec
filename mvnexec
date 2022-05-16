@@ -216,7 +216,7 @@ then
    setJavaExecutable "$JAVA_HOME"
 elif command -v java >&-
 then
-   JAVA=$(command -v java >&-)
+   JAVA=$(command -v java)
 else
    errorJavaExecutable
 fi

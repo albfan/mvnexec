@@ -10,6 +10,7 @@ Download and symlink to your path
 $ git clone git@github.com:albfan/mvnexec.git
 $ cd mvnexec
 $ ln -s $PWD/mvnexec ~/bin/
+$ ln -s $PWD/mvnexec-wrapper ~/bin/
 ```
 
 ##Usage

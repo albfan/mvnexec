@@ -26,6 +26,7 @@ CLEAN="yes"
 COPY_DEP="no"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
+SEARCH_GLOBAL="no"
 FILTER_NAME_PROG="cat -"
 AUTO="no"
 LIST="no"
@@ -54,6 +55,7 @@ Options:
    -D, --no-copy-deps    Avoid copy dependencies
    -M, --no-main         Don't search on src/main/java.
    -T, --no-test         Don't search on src/test/java.
+   -g, --global-search   Search globally for main classes. Ignore src and test searches.
    -f, --filter-name     Name filter for classes.
    -a, --auto            If there is only one match launch it.
    -l, --list            Just output found classes with main method.
@@ -145,7 +147,7 @@ function launch() {
 # }}}
 
 # parse args {{{
-TEMP=$(getopt -o "PqBMTf:DdaClhw" -l copy-deps,wrap,no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DdaClhwg" -l global-search,copy-deps,wrap,no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
 
 EXIT=$?
 if [ $EXIT != 0 ]
@@ -186,6 +188,11 @@ do
          ;;
       -T|--no-test)
          SEARCH_TEST="no"
+         ;;
+      -g|--global-search)
+         SEARCH_MAIN="no"
+         SEARCH_TEST="no"
+         SEARCH_GLOBAL="yes"
          ;;
       -f|--filter-name)
          ARG=$2
@@ -261,6 +268,20 @@ $TESTCLASSES"
    fi
 fi
 
+if [ $SEARCH_GLOBAL == "yes" ]
+then
+   GLOBALCLASSES=$(findMainClasses .)
+   if [ -n "$GLOBALCLASSES" ]
+   then
+      if [ -n "$FOUNDCLASSES" ]
+      then
+         FOUNDCLASSES="$FOUNDCLASSES
+$GLOBALCLASSES"
+      else
+         FOUNDCLASSES=$GLOBALCLASSES
+      fi
+   fi
+fi
 if [ -z "$FOUNDCLASSES" ]
 then
    echo

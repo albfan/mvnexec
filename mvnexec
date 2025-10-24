@@ -31,6 +31,7 @@ AUTO="no"
 LIST="no"
 SEPARATOR=":"
 CONFIG=""
+WRAP_COMMAND="no"
 # }}}
 
 # functions {{{
@@ -46,6 +47,7 @@ Execute clases with main method inside maven project.
 
 Options:
    -P, --no-parameters   Don't ask for parameters.
+   -w, --wrap            Wrap execution to ignore non 0 exit status
    -C, --no-clean        Don't clean compilation
    -q, --quiet           Be quiet. Don't show [INFO] messages.
    -B, --no-build        Avoid building. 
@@ -126,13 +128,20 @@ function launch() {
       mvn $QUIET dependency:copy-dependencies
    fi
    echo executing $CLASS
-   mvn $QUIET exec:exec -Dexec.executable="$JAVA" -Dexec.workingdir="." \
-      -Dexec.args="-cp target/classes${SEPARATOR}target/test-classes${SEPARATOR}$(dependencyClasspath) ${CLASS}${ARGS} $*"
+   EXECUTABLE=$JAVA
+   WRAP=""
+   if [ "$WRAP_COMMAND" == "yes" ]
+   then
+       EXECUTABLE='mvnexec-wrapper'
+       WRAP=$JAVA
+   fi
+   mvn $QUIET exec:exec -Dexec.executable="$EXECUTABLE" -Dexec.workingdir="." \
+      -Dexec.args="$WRAP -cp target/classes${SEPARATOR}target/test-classes${SEPARATOR}$(dependencyClasspath) ${CLASS}${ARGS} $*"
 }
 # }}}
 
 # parse args {{{
-TEMP=$(getopt -o "PqBMTf:DaClh" -l no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DaClhw" -l wrap,no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
 
 EXIT=$?
 if [ $EXIT != 0 ]
@@ -147,6 +156,9 @@ eval set -- "$TEMP"
 while true
 do
    case "$1" in
+      -w|--wrap)
+         WRAP_COMMAND="yes"
+         ;;
       -P|--no-parameters)
          SET_PARAMS=
          ;;

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Run the command
+"$@"
+rc=$?
+
+echo "mvnexec wrapper: original exit code = ${rc}" >&2
+export ORIGINAL_EXIT="${rc}"
+
+# Always succeed
+exit 0

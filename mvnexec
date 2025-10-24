@@ -23,7 +23,7 @@ VERSION=1.1
 SET_PARAMS="yes"
 BUILD="yes"
 CLEAN="yes"
-COPY_DEP="yes"
+COPY_DEP="no"
 SEARCH_MAIN="yes"
 SEARCH_TEST="yes"
 FILTER_NAME_PROG="cat -"
@@ -99,6 +99,10 @@ function findMainClasses() {
 }
 
 function dependencyClasspath() {
+   mvn -q dependency:build-classpath -DincludeScope=runtime -Dmdep.outputFile=/dev/stdout
+}
+
+function buildDependencyClasspath() {
    IFS=. read major minor extra < <($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
    if [ "$major" == 1 ] && [[ "$minor" > 5 ]]
    then
@@ -141,7 +145,7 @@ function launch() {
 # }}}
 
 # parse args {{{
-TEMP=$(getopt -o "PqBMTf:DaClhw" -l wrap,no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
+TEMP=$(getopt -o "PqBMTf:DdaClhw" -l copy-deps,wrap,no-parameters,quiet,no-build,no-main,no-test,filter-name:,auto,no-copy-deps,no-clean,win-separator,list,config:,help -n $(basename $0) -- "$@")
 
 EXIT=$?
 if [ $EXIT != 0 ]
@@ -170,6 +174,9 @@ do
          ;;
       -D|--no-copy-deps) 
          COPY_DEP="no" 
+         ;;
+      -d|--copy-deps)
+         COPY_DEP="yes"
          ;;
       -q|--quiet) 
          QUIET="-q" 
